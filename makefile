@@ -18,6 +18,12 @@ OBJS += $(addprefix $(OBJDIR)/, $(OBJECTS))
 
 all: $(OUTPUT)
 
+$(RELEASE): $(OUTPUT)
+
+run: $(RELEASE)
+	@echo [Executing $<]
+	$<
+
 $(OUTPUT): | $(OBJS)
 	@echo [Linking $@]
 	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(OBJS) -o $(RELEASE) $(LIBS) -Wl,-Map,$(OUTPUT).map
