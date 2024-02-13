@@ -1,7 +1,6 @@
 CROSS_COMPILE ?=
 CXX ?= $(CROSS_COMPILE)g++
 CC ?= $(CROSS_COMPILE)gcc
-UIC = uic
 LDFLAGS +=-Wl,--gc-sections
 CXXFLAGS = -fPIC -std=c++20
 LIBS = 
@@ -42,6 +41,3 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.cpp
 clean:
 	rm -rfv $(OBJDIR) $(OUTPUT) $(OUTPUT).gdb $(OUTPUT).map $(HEADERS) $(RELEASEDIR)
 
-%.h: %.ui
-	@echo [Compiling $<]
-	$(UIC) -o $@ $<
