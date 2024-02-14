@@ -11,7 +11,7 @@ OBJDIR = build
 OUTPUT = emu
 RELEASEDIR = bin
 RELEASE = $(addprefix $(RELEASEDIR)/, $(OUTPUT))
-OBJECTS = main.o cpu.o registers.o memoryManager.o util.o
+OBJECTS = main.o cpu.o registers.o memoryManager.o util.o ioChip.o
 HEADERS = 
 OBJS += $(addprefix $(OBJDIR)/, $(OBJECTS))
 

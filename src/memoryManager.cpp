@@ -26,10 +26,10 @@ void MemoryManager::writeMem(uint16_t address, uint8_t value){
     /*
     std::cout <<  "------value: " <<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*memoryLocation).to_ulong()<<std::endl;
     std::cout <<  "------Written to: " <<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(address).to_ulong()<<std::endl;
-    */
     if (address == uint16_t(0x5000)){
         std::cout<<value;
     }
+    */
 }
 
 void MemoryManager::writeMem(uint16_t address, uint16_t value){

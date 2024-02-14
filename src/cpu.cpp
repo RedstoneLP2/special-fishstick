@@ -113,6 +113,7 @@ void Cpu::run(){
         std::cout<< "Unimplemented Instruction: "<< std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(opcode).to_ulong() << std::endl;
         break;
     }
+    sleep(.05);
     cpuRegisters.ProgramCounter++;
 }
 
