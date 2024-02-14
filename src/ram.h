@@ -2,16 +2,19 @@
 #include <stdlib.h>
 #include <string.h>
 #include <iomanip>
-class Ram
+class MemoryManager
 {
 private:
     void* memory;
 public:
-    Ram(int);
-    Ram();
-    ~Ram();
+    MemoryManager(int);
+    MemoryManager();
+    ~MemoryManager();
 
     void* getMemory();
+    void writeMem(uint16_t,uint8_t);
+    void writeMem(uint16_t,uint16_t);
+    uint8_t* GetMemoryLocation(uint16_t);
 };
 
 

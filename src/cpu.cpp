@@ -1,8 +1,8 @@
-#include "cpu.h"
+#include "common.h"
 
-Cpu::Cpu(){
+Cpu::Cpu(MemoryManager SystemRam){
     cpuRegisters = Registers();
-    systemRam = Ram(65535);
+    systemRam = SystemRam;
     reset();
 }
 
@@ -123,32 +123,6 @@ uint16_t Cpu::getOperantBytes(){
         return (uint16_t)value.to_ulong();
 }
 
-void Cpu::writeMem(uint16_t address, uint8_t value){
-    uint8_t* memoryLocation = (uint8_t*) systemRam.getMemory() + address;
-    *memoryLocation = value;
-    /*
-    std::cout <<  "------value: " <<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*memoryLocation).to_ulong()<<std::endl;
-    std::cout <<  "------Written to: " <<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(address).to_ulong()<<std::endl;
-    */
-    if (address == uint16_t(0x5000)){
-        std::cout<<value;
-    }
-}
-
-void Cpu::writeMem(uint16_t address, uint16_t value){
-    uint16_t* memoryLocation = (uint16_t*) systemRam.getMemory() + address;
-    *memoryLocation = value;
-    /*
-    std::cout <<  "------value: " <<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(*memoryLocation).to_ulong()<<std::endl;
-    std::cout <<  "------Written to: " <<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(address).to_ulong()<<std::endl;
-    */
-}
-uint8_t* Cpu::GetMemoryLocation(uint16_t address){
-    uint8_t* baseAddress = (uint8_t *) systemRam.getMemory();
-    return baseAddress + address;
-
-}
-
 void Cpu::printRegisters(){
     std::cout << cpuRegisters.toString();
 }
@@ -163,10 +137,6 @@ void Cpu::printMemoryLocation(int memoryLocation){
         std::cout << std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(*address).to_ulong()<< " ";
     }
     std::cout<<std::endl;
-}
-
-void* Cpu::getMemory(){
-    return systemRam.getMemory();
 }
 
 void Cpu::setStatusFlag(unsigned Flag){
@@ -187,14 +157,14 @@ void Cpu::ldy(char immediate){
 }
 
 void Cpu::sta(uint16_t address){
-    writeMem(address, cpuRegisters.Accumulator);
+    systemRam.writeMem(address, cpuRegisters.Accumulator);
 }
 
 void Cpu::stx(uint16_t address){
-    writeMem(address, cpuRegisters.XIndex);
+    systemRam.writeMem(address, cpuRegisters.XIndex);
 }
 void Cpu::sty(uint16_t address){
-    writeMem(address, cpuRegisters.YIndex);
+    systemRam.writeMem(address, cpuRegisters.YIndex);
 }
 
 void Cpu::bne(int8_t relAddress){
@@ -228,11 +198,11 @@ void Cpu::jsr(uint16_t address){
     uint8_t upper_byte = (uint8_t) (cpuRegisters.ProgramCounter  >> 8);
 
     uint16_t stackAddress = 0x0100+cpuRegisters.StackPointer;
-    writeMem(stackAddress, upper_byte);
+    systemRam.writeMem(stackAddress, upper_byte);
     cpuRegisters.StackPointer--;
 
     stackAddress = 0x0100+cpuRegisters.StackPointer;
-    writeMem(stackAddress, lower_byte);
+    systemRam.writeMem(stackAddress, lower_byte);
     cpuRegisters.StackPointer--;
 
     /*
@@ -247,12 +217,12 @@ void Cpu::rts(){
     cpuRegisters.StackPointer++;
     uint16_t stackAddress = 0x0100+cpuRegisters.StackPointer;
     //std::cout<< "StackAddress: " <<std::setfill('0')<<std::setw(4)<<std::hex<< std::bitset<16>(stackAddress).to_ulong()<<std::endl;
-    uint8_t lower_byte = *GetMemoryLocation(stackAddress);
+    uint8_t lower_byte = *systemRam.GetMemoryLocation(stackAddress);
     cpuRegisters.StackPointer++;
 
     stackAddress = 0x0100+cpuRegisters.StackPointer;
     //std::cout<< "StackAddress: " <<std::setfill('0')<<std::setw(4)<<std::hex<< std::bitset<16>(stackAddress).to_ulong()<<std::endl;
-    uint8_t upper_byte = *GetMemoryLocation(stackAddress);
+    uint8_t upper_byte = *systemRam.GetMemoryLocation(stackAddress);
     uint16_t returnAddress = (((uint16_t)upper_byte) << 8)+lower_byte;
     //std::cout<< "jumping to: " <<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(returnAddress).to_ulong()<<std::endl;
     jmp(returnAddress);
@@ -285,7 +255,7 @@ void Cpu::clv(){
 
 void Cpu::pha(){
     uint16_t stackAddress = 0x0100+cpuRegisters.StackPointer;
-    writeMem(stackAddress, cpuRegisters.Accumulator);
+    systemRam.writeMem(stackAddress, cpuRegisters.Accumulator);
     cpuRegisters.StackPointer--;
 }
 
@@ -293,5 +263,5 @@ void Cpu::pla(){
     cpuRegisters.StackPointer++;
     uint16_t stackAddress = 0x0100+cpuRegisters.StackPointer;
     //std::cout<< "StackAddress: " <<std::setfill('0')<<std::setw(4)<<std::hex<< std::bitset<16>(stackAddress).to_ulong()<<std::endl;
-    cpuRegisters.Accumulator = *GetMemoryLocation(stackAddress);
+    cpuRegisters.Accumulator = *systemRam.GetMemoryLocation(stackAddress);
 }

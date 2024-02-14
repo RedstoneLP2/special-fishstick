@@ -1,5 +1,4 @@
-#include "registers.h"
-#include "ram.h"
+#include "common.h"
 
 class Cpu
 {
@@ -7,14 +6,11 @@ class Cpu
 private:
 
     Registers cpuRegisters;
-    Ram systemRam;
-    void writeMem(uint16_t,uint8_t);
-    void writeMem(uint16_t,uint16_t);
-    uint8_t* GetMemoryLocation(uint16_t);
+    MemoryManager systemRam;
     uint16_t getOperantBytes();
 
 public:
-    Cpu();
+    Cpu(MemoryManager);
     ~Cpu();
     void setStatusFlag(unsigned);
     void lda(char);

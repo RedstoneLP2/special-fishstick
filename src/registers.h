@@ -1,7 +1,4 @@
-#include <iostream>
-#include <format>
-#include <bitset>
-#include <cstdint>
+#include "common.h"
 
 const struct
 {
