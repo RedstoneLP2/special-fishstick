@@ -1,12 +1,15 @@
+#pragma once
+
 #include <iostream>
 #include <format>
 #include <bitset>
 #include <cstdint>
-#ifndef COMMON
-#define COMMON
+#include <iostream>
+#include <stdlib.h>
+#include <string.h>
+#include <iomanip>
 
 #include "registers.h"
 #include "ram.h"
 #include "cpu.h"
 #include "util.h"
-#endif

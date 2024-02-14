@@ -1,7 +1,4 @@
-#include <iostream>
-#include <stdlib.h>
-#include <string.h>
-#include <iomanip>
+
 class MemoryManager
 {
 private:

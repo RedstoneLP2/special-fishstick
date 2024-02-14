@@ -11,8 +11,8 @@ Cpu::~Cpu(){
 }
 
 void Cpu::reset(){
-    std::string upper = std::bitset<8>(*((char*)systemRam.getMemory()+0xFFFC)).to_string();
-    std::string lower = std::bitset<8>(*((char*)systemRam.getMemory()+0xFFFD)).to_string();
+    std::string upper = std::bitset<8>(*(systemRam.GetMemoryLocation(0xFFFC))).to_string();
+    std::string lower = std::bitset<8>(*(systemRam.GetMemoryLocation(0xFFFD))).to_string();
     std::bitset<16> resetvector (lower+upper);
     //std::cout << resetvector.to_string()<<std::endl;
     cpuRegisters.ProgramCounter = resetvector.to_ulong();
@@ -37,17 +37,17 @@ void Cpu::reset(){
 }
 
 void Cpu::run(){
-    uint8_t opcode = *((uint8_t*)(systemRam.getMemory())+cpuRegisters.ProgramCounter);
+    uint8_t opcode = *((uint8_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter));
     /*
     std::cout<<"opcode: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(opcode).to_ulong()<<std::endl;
-    std::cout<<"parameter01: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*((uint8_t*)(systemRam.getMemory())+cpuRegisters.ProgramCounter+1)).to_ulong()<<std::endl;
-    std::cout<<"parameter02: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*((uint8_t*)(systemRam.getMemory())+cpuRegisters.ProgramCounter+2)).to_ulong()<<std::endl;
+    std::cout<<"parameter01: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))).to_ulong()<<std::endl;
+    std::cout<<"parameter02: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+2))).to_ulong()<<std::endl;
     */
     switch (opcode)
     {
     case uint8_t(0xAD):
         {
-            uint16_t* address =(uint16_t*) (*((uint16_t*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1)));
+            uint16_t* address = (uint16_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1);
             char value = *address;
             lda(value);
             cpuRegisters.ProgramCounter++;
@@ -56,16 +56,16 @@ void Cpu::run(){
         break;
     case uint8_t(0xA9):
         {
-            char value = *((uint8_t*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1));
+            char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
             lda(value);
             cpuRegisters.ProgramCounter++;
         }
         break;
     case uint8_t(0xAE):
-        ldx(*((char*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1)));
+        ldx(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
         break;
     case uint8_t(0xAC):
-        ldy(*((char*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1)));
+        ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
         break;
     case uint8_t(0x8D):
         sta(getOperantBytes());
@@ -105,7 +105,7 @@ void Cpu::run(){
         break;
     case uint8_t(0xD0):
         {
-            int8_t value = *((int8_t*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1));
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
             bne(value);
         }
         break;
@@ -117,8 +117,8 @@ void Cpu::run(){
 }
 
 uint16_t Cpu::getOperantBytes(){
-        std::string upper = std::bitset<8>(*((uint8_t*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+1))).to_string();
-        std::string lower = std::bitset<8>(*((uint8_t*)(systemRam.getMemory())+(cpuRegisters.ProgramCounter+2))).to_string();
+        std::string upper = std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))).to_string();
+        std::string lower = std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+2))).to_string();
         std::bitset<16>value(lower+upper);
         return (uint16_t)value.to_ulong();
 }
@@ -129,11 +129,11 @@ void Cpu::printRegisters(){
 
 void Cpu::printMemoryLocation(int memoryLocation){
     // 0x5000 - 0x5010
-    char* baseAddress = (char *) systemRam.getMemory();
-    baseAddress = baseAddress + memoryLocation;
+    
+    uint8_t* baseAddress = (systemRam.GetMemoryLocation(memoryLocation));
     std::cout<< "     00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F"<<std::endl;
     std::cout << std::setfill('0')<<std::setw(4) << std::hex << memoryLocation<< " ";
-    for (char* address = baseAddress; address <= baseAddress+0x0F; address++){
+    for (uint8_t* address = baseAddress; address <= baseAddress+0x0F; address++){
         std::cout << std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(*address).to_ulong()<< " ";
     }
     std::cout<<std::endl;

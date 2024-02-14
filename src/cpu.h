@@ -34,7 +34,6 @@ public:
     void inc();
     void printRegisters();
     void printMemoryLocation(int);
-    void* getMemory();
     void reset();
     void run();
 
