@@ -40,7 +40,7 @@ MONCOUT:
 CHROUT:
                 pha
                 sta     ACIA_DATA
-                lda     #$02
+                lda     #$FF
 @txdelay:       dec
                 bne     @txdelay
                 pla
