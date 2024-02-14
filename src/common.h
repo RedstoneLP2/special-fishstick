@@ -10,6 +10,6 @@
 #include <iomanip>
 
 #include "registers.h"
-#include "ram.h"
+#include "memoryManager.h"
 #include "cpu.h"
 #include "util.h"
