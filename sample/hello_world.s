@@ -28,4 +28,5 @@ HELLOWORLD:
         jsr CHROUT
         lda #10         ; '\n' Screen Code
         jsr CHROUT
-        rts            ; All programs must end with Return To Subroutine (RTS).
+
+        JMP RESET
