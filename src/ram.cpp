@@ -6,7 +6,7 @@ Ram::Ram(int size)
 }
 Ram::Ram()
 {
-    Ram(16384);
+    Ram(0xFFFF);
 }
 
 Ram::~Ram()

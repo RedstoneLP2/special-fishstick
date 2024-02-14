@@ -1,5 +1,7 @@
 #include <iostream>
 #include <stdlib.h>
+#include <string.h>
+#include <iomanip>
 class Ram
 {
 private:

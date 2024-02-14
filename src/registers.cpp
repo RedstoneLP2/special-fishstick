@@ -1,31 +1,29 @@
 #include "registers.h"
 
 Registers::Registers(){
-            ProgramCounter.reset();
-            StackPointer.reset();
+            ProgramCounter = 0;
+            StackPointer = 0;
             ProcessorStatus.reset();
-            Accumulator.reset();
-            XIndex.reset();
-            YIndex.reset();
+            Accumulator = 0;
+            XIndex = 0;
+            YIndex = 0;
         }
 
 Registers::~Registers()
 {}
 
 std::string Registers::toString() {
-    return std::format("ProgramCounter: {}\n"
-        "StackPointer: {}\n"
-        "ProcessorStatus: {}\n"
+    return std::format("ProgramCounter: {:x}\n"
+        "StackPointer: {:x}\n"
+        "ProcessorStatus: {:x}\n"
         "ProcessorStatus: NV1BDIZC\n"
-        "Accumulator: {}\n"
-        "XIndex: {}\n"
-        "YIndex: {}\n",
-        ProgramCounter.to_string(),
-        StackPointer.to_string(),
-
-        ProcessorStatus.to_string(),
-
-        Accumulator.to_string(),
-        XIndex.to_string(),
-        YIndex.to_string());
+        "Accumulator: {:x}\n"
+        "XIndex: {:x}\n"
+        "YIndex: {:x}\n",
+        ProgramCounter,
+        StackPointer,
+        ProcessorStatus.to_ulong(),
+        Accumulator,
+        XIndex,
+        YIndex);
         }
