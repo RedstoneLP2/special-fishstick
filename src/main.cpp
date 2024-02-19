@@ -1,6 +1,6 @@
 #include "common.h"
 
-int RunCpu(Cpu core){
+void RunCpu(Cpu core){
     for (int i = 0; i < 150; i++)
     {
         //core.printRegisters();
@@ -9,7 +9,7 @@ int RunCpu(Cpu core){
     }
 }
 
-int RunACIA(ioChip core){
+void RunACIA(ioChip core){
     for (int i = 0; i < 150; i++)
     {
         //core.printRegisters();
@@ -17,7 +17,6 @@ int RunACIA(ioChip core){
         //std::cout << "-------------------"<<std::endl;
     }
 }
-
 
 int main(int argc, char const *argv[])
 {

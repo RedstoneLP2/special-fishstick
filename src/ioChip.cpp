@@ -21,8 +21,8 @@ void ioChip::run(){
 }
 
 void ioChip::sendkey(uint8_t keycode){
-    *(mm.GetMemoryLocation(ACIA_STATUS_ADDR)) = 0x08;
-    *(mm.GetMemoryLocation(ACIA_DATA_ADDR)) = keycode;
+    mm.writeMem(ACIA_STATUS_ADDR,uint8_t(0x08));
+    mm.writeMem(ACIA_DATA_ADDR,keycode);
 }
 
 void ioChip::print(){
