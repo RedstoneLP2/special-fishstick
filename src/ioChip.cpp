@@ -14,10 +14,10 @@ ioChip::~ioChip()
 }
 
 void ioChip::run(){
-    if (mm.GetMemoryLocation(ACIA_DATA_ADDR) != 0x00){
+    if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != 0x00){
         print();
     }
-    sleep(.4);
+    sleep(.5);
 }
 
 void ioChip::sendkey(uint8_t keycode){
@@ -27,5 +27,5 @@ void ioChip::sendkey(uint8_t keycode){
 
 void ioChip::print(){
     std::cout << mm.GetMemoryLocation(ACIA_DATA_ADDR);
-    *mm.GetMemoryLocation(ACIA_DATA_ADDR) = 0x00;
+    mm.writeMem(ACIA_DATA_ADDR, uint8_t(0x00));
 }

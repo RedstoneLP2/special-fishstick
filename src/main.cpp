@@ -1,7 +1,7 @@
 #include "common.h"
 
 void RunCpu(Cpu core){
-    for (int i = 0; i < 150; i++)
+    for (int i = 0; i < 700; i++)
     {
         //core.printRegisters();
         core.run();
@@ -10,7 +10,7 @@ void RunCpu(Cpu core){
 }
 
 void RunACIA(ioChip core){
-    for (int i = 0; i < 150; i++)
+    for (int i = 0; i < 700; i++)
     {
         //core.printRegisters();
         core.run();
