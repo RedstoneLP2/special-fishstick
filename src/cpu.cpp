@@ -3,6 +3,7 @@
 Cpu::Cpu(MemoryManager SystemRam){
     cpuRegisters = Registers();
     systemRam = SystemRam;
+    Opcode_Length = 0;
     reset();
 }
 
@@ -37,6 +38,11 @@ void Cpu::reset(){
 }
 
 void Cpu::run(){
+    if (Opcode_Length>0){
+        Opcode_Length--;
+        sleep(.5);
+        return;
+    }
     uint8_t opcode = *((uint8_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter));
     /*
     std::cout<<"opcode: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(opcode).to_ulong()<<std::endl;
@@ -52,6 +58,7 @@ void Cpu::run(){
             lda(value);
             cpuRegisters.ProgramCounter++;
             cpuRegisters.ProgramCounter++;
+            Opcode_Length=4;
         }
         break;
     case uint8_t(0xA9):
@@ -59,54 +66,66 @@ void Cpu::run(){
             char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
             lda(value);
             cpuRegisters.ProgramCounter++;
+            Opcode_Length=2;
         }
         break;
     case uint8_t(0xAE):
         ldx(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        Opcode_Length=4;
         break;
     case uint8_t(0xAC):
         ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        Opcode_Length=4;
         break;
     case uint8_t(0x8D):
         sta(getOperantBytes());
         cpuRegisters.ProgramCounter++;
         cpuRegisters.ProgramCounter++;
+        Opcode_Length=5;
         break;
     case uint8_t(0x8E):
         stx(getOperantBytes());
         cpuRegisters.ProgramCounter++;
         cpuRegisters.ProgramCounter++;
+        Opcode_Length=5;
         break;
     case uint8_t(0x8C):
         sty(getOperantBytes());
         cpuRegisters.ProgramCounter++;
         cpuRegisters.ProgramCounter++;
+        Opcode_Length=5;
         break;
     case uint8_t(0x20):
         {
             uint16_t value = getOperantBytes();
             //std::cout<<"value "<<std::setfill('0')<<std::setw(4)<<std::hex<<std::bitset<16>(value).to_ulong()<<std::endl;
             jsr(value);
+            Opcode_Length=6;
         }
         break;
     case uint8_t(0x60):
         {
             rts();
+            Opcode_Length=6;
         }
         break;
     case uint8_t(0x48):
         pha();
+        Opcode_Length=3;
         break;
     case uint8_t(0x68):
         pla();
+        Opcode_Length=4;
         break;
     case uint8_t(0x3A):
         dec();
+        Opcode_Length=2;
         break;
     case uint8_t(0xD0):
         {
             int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
             bne(value);
+            Opcode_Length=2;
         }
         break;
     default:
@@ -170,6 +189,7 @@ void Cpu::sty(uint16_t address){
 
 void Cpu::bne(int8_t relAddress){
     if (cpuRegisters.Accumulator != 0){
+        Opcode_Length++;
         jmp(relAddress);
     }else{
         cpuRegisters.ProgramCounter++;

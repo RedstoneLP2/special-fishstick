@@ -8,6 +8,7 @@ private:
     Registers cpuRegisters;
     MemoryManager systemRam;
     uint16_t getOperantBytes();
+    uint16_t Opcode_Length;
 
 public:
     Cpu(MemoryManager);
