@@ -1,7 +1,10 @@
 #include "common.h"
 
+bool running = false;
+
 void RunCpu(Cpu core){
-    for (int i = 0; i < 700; i++)
+    while(running)
+    //for (int i = 0; i < 5000; i++)
     {
         //core.printRegisters();
         core.run();
@@ -10,7 +13,8 @@ void RunCpu(Cpu core){
 }
 
 void RunACIA(ioChip core){
-    for (int i = 0; i < 700; i++)
+    while(running)
+    //for (int i = 0; i < 5000; i++)
     {
         //core.printRegisters();
         core.run();
@@ -21,6 +25,7 @@ void RunACIA(ioChip core){
 int main(int argc, char const *argv[])
 {
     MemoryManager memory = MemoryManager(65535);
+    running = true;
     Cpu core = Cpu(memory);
     ioChip ACIA = ioChip(memory);
     loadfile("./sample/tmp/eater.bin",memory.getMemory());
@@ -28,6 +33,8 @@ int main(int argc, char const *argv[])
     std::thread cpu (RunCpu,core);
     std::thread acia (RunACIA,ACIA);
 
+    sleep(2);
+    running = false;
     cpu.join();
     acia.join();
 
