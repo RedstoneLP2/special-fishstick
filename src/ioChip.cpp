@@ -17,7 +17,7 @@ void ioChip::run(){
     if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != 0x00){
         print();
     }
-    sleep(.5);
+    sleep(.05);
 }
 
 void ioChip::sendkey(uint8_t keycode){

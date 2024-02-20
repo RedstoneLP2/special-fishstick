@@ -40,7 +40,7 @@ void Cpu::reset(){
 void Cpu::run(){
     if (Opcode_Length>0){
         Opcode_Length--;
-        sleep(.5);
+        sleep(.05);
         return;
     }
     uint8_t opcode = *((uint8_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter));
@@ -73,15 +73,40 @@ void Cpu::run(){
         ldx(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
         Opcode_Length=4;
         break;
+    /*
     case uint8_t(0xAC):
+        std::cout<< "0xAC!"<<std::endl;
         ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
         Opcode_Length=4;
+        break;
+    */
+    case uint8_t(0xA0):
+        ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        Opcode_Length=2;
+        cpuRegisters.ProgramCounter++;
         break;
     case uint8_t(0x8D):
         sta(getOperantBytes());
         cpuRegisters.ProgramCounter++;
         cpuRegisters.ProgramCounter++;
         Opcode_Length=5;
+        break;
+    case uint8_t(0x85):
+        sta(0x0000+(uint8_t) *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        cpuRegisters.ProgramCounter++;
+        Opcode_Length=4;
+        break;
+    case uint8_t(0x99):
+        sta(getOperantBytes()+cpuRegisters.YIndex);
+        cpuRegisters.ProgramCounter++;
+        cpuRegisters.ProgramCounter++;
+        Opcode_Length=5;
+        break;
+    case uint8_t(0xb9):
+        lda(getOperantBytes()+cpuRegisters.YIndex);
+        cpuRegisters.ProgramCounter++;
+        cpuRegisters.ProgramCounter++;
+        Opcode_Length=4;
         break;
     case uint8_t(0x8E):
         stx(getOperantBytes());
@@ -109,6 +134,13 @@ void Cpu::run(){
             Opcode_Length=6;
         }
         break;
+    case uint8_t(0x29):
+        {
+            char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            and_(value);
+            cpuRegisters.ProgramCounter++;
+            Opcode_Length=2;
+        }
     case uint8_t(0x48):
         pha();
         Opcode_Length=3;
@@ -121,6 +153,14 @@ void Cpu::run(){
         dec();
         Opcode_Length=2;
         break;
+    case uint8_t(0x88):
+        dey();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0xc8):
+        iny();
+        Opcode_Length=2;
+        break;
     case uint8_t(0xD0):
         {
             int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
@@ -128,8 +168,60 @@ void Cpu::run(){
             Opcode_Length=2;
         }
         break;
+    case uint8_t(0xf0):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            beq(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x10):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bpl(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x30):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bmi(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x4c):
+        {
+            jmp(getOperantBytes());
+            Opcode_Length=3;
+            break;
+        }
+    case uint8_t(0xd8):
+        cld();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0x58):
+        cli();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0xC9):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            cmp(value);
+            Opcode_Length=2;
+            cpuRegisters.ProgramCounter++;
+        }
+        break;
+    case uint8_t(0xAA):
+        tax();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0x0A):
+        asl();
+        Opcode_Length=2;
+        break;
     default:
         std::cout<< "Unimplemented Instruction: "<< std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(opcode).to_ulong() << std::endl;
+        //printRegisters();
         break;
     }
     sleep(.05);
@@ -165,6 +257,28 @@ void Cpu::setStatusFlag(unsigned Flag){
         cpuRegisters.ProcessorStatus[Flag].flip();
     }
 }
+void Cpu::unSetStatusFlag(unsigned Flag){
+    if (cpuRegisters.ProcessorStatus.test(Flag))
+    {
+        cpuRegisters.ProcessorStatus[Flag].flip();
+    }
+}
+
+void Cpu::cmp(uint8_t value){
+    if (cpuRegisters.Accumulator == value){
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if (cpuRegisters.Accumulator < value){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }
+    if (cpuRegisters.Accumulator >= value){
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
+}
+
+void Cpu::and_(char immediate){
+    cpuRegisters.Accumulator = immediate & cpuRegisters.Accumulator;
+}
 
 void Cpu::lda(char immediate){
     cpuRegisters.Accumulator = immediate;
@@ -196,6 +310,33 @@ void Cpu::bne(int8_t relAddress){
     }
 }
 
+void Cpu::beq(int8_t relAddress){
+    if (cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Zero)){
+        Opcode_Length++;
+        jmp(relAddress);
+    }else{
+        cpuRegisters.ProgramCounter++;
+    }
+}
+
+void Cpu::bpl(int8_t relAddress){
+    if (!cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Negative)){
+        Opcode_Length++;
+        jmp(relAddress);
+    }else{
+        cpuRegisters.ProgramCounter++;
+    }
+}
+
+void Cpu::bmi(int8_t relAddress){
+    if (cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Negative)){
+        Opcode_Length++;
+        jmp(relAddress);
+    }else{
+        cpuRegisters.ProgramCounter++;
+    }
+}
+
 void Cpu::jmp(int8_t relAddress){
     cpuRegisters.ProgramCounter = relAddress+cpuRegisters.ProgramCounter+1;
 }
@@ -205,6 +346,24 @@ void Cpu::jmp(uint16_t address){
 
 void Cpu::dec(){
     cpuRegisters.Accumulator--;
+}
+
+void Cpu::dey(){
+    cpuRegisters.YIndex--;
+    if (!cpuRegisters.YIndex){
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if (cpuRegisters.YIndex>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
+}
+
+void Cpu::iny(){
+    cpuRegisters.YIndex++;
 }
 
 void Cpu::inc(){
@@ -285,4 +444,36 @@ void Cpu::pla(){
     uint16_t stackAddress = 0x0100+cpuRegisters.StackPointer;
     //std::cout<< "StackAddress: " <<std::setfill('0')<<std::setw(4)<<std::hex<< std::bitset<16>(stackAddress).to_ulong()<<std::endl;
     cpuRegisters.Accumulator = *systemRam.GetMemoryLocation(stackAddress);
+}
+
+void Cpu::tax(){
+    cpuRegisters.StackPointer++;
+    cpuRegisters.XIndex = cpuRegisters.Accumulator;
+}
+
+void Cpu::asl(){
+    cpuRegisters.StackPointer++;
+
+    uint8_t carry = ((cpuRegisters.Accumulator>>7)&1);
+
+    if (carry){
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Carry);
+    }
+
+    uint8_t shifted = (uint8_t) (cpuRegisters.Accumulator  << 1);
+    if (shifted){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(shifted>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
+    cpuRegisters.Accumulator = shifted;
+
 }
