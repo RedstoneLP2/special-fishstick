@@ -3,7 +3,7 @@ CXX ?= $(CROSS_COMPILE)g++
 CC ?= $(CROSS_COMPILE)gcc
 LDFLAGS +=-Wl,--gc-sections
 CXXFLAGS = -fPIC -std=c++20
-LIBS = 
+LIBS = -lncurses
 
 
 SRCDIR = src
@@ -11,7 +11,7 @@ OBJDIR = build
 OUTPUT = emu
 RELEASEDIR = bin
 RELEASE = $(addprefix $(RELEASEDIR)/, $(OUTPUT))
-OBJECTS = main.o cpu.o registers.o memoryManager.o util.o ioChip.o
+OBJECTS = main.o cpu.o registers.o memoryManager.o util.o ioChip.o ioHandler.o
 HEADERS = 
 OBJS += $(addprefix $(OBJDIR)/, $(OBJECTS))
 
