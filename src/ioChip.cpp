@@ -1,12 +1,15 @@
 #include "common.h"
 
-ioChip::ioChip(MemoryManager mem)
+ioChip::ioChip(MemoryManager mem,ioHandler* io)
 {
     mm = mem;
+    iohandler = io;
+    (*iohandler).printHeader();
     ACIA_DATA_ADDR      = 0x5000;
     ACIA_STATUS_ADDR    = 0x5001;
     ACIA_CMD_ADDR       = 0x5002;
     ACIA_CTRL_ADDR      = 0x5003;
+
 }
 
 ioChip::~ioChip()
@@ -14,10 +17,14 @@ ioChip::~ioChip()
 }
 
 void ioChip::run(){
-    if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != 0x00){
+    char ch;
+    if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != uint8_t(0x00)){
         print();
     }
-    sleep(.05);
+    if ((ch = (*iohandler).handleInput())!=ERR){
+        sendkey(ch);
+    }
+    sleep(SPEED);
 }
 
 void ioChip::sendkey(uint8_t keycode){
@@ -26,6 +33,7 @@ void ioChip::sendkey(uint8_t keycode){
 }
 
 void ioChip::print(){
-    std::cout << mm.GetMemoryLocation(ACIA_DATA_ADDR);
+    (*iohandler).printChar(*mm.GetMemoryLocation(ACIA_DATA_ADDR));
     mm.writeMem(ACIA_DATA_ADDR, uint8_t(0x00));
+    refresh();
 }

@@ -1,9 +1,10 @@
 #include "common.h"
 
-Cpu::Cpu(MemoryManager SystemRam){
+Cpu::Cpu(MemoryManager SystemRam, ioHandler* io){
     cpuRegisters = Registers();
     systemRam = SystemRam;
     Opcode_Length = 0;
+    iohandler = io;
     reset();
 }
 
@@ -38,9 +39,9 @@ void Cpu::reset(){
 }
 
 void Cpu::run(){
+    sleep(SPEED);
     if (Opcode_Length>0){
         Opcode_Length--;
-        sleep(.05);
         return;
     }
     uint8_t opcode = *((uint8_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter));
@@ -141,6 +142,13 @@ void Cpu::run(){
             cpuRegisters.ProgramCounter++;
             Opcode_Length=2;
         }
+    case uint8_t(0x49):
+        {
+            char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            eor_(value);
+            cpuRegisters.ProgramCounter++;
+            Opcode_Length=2;
+        }
     case uint8_t(0x48):
         pha();
         Opcode_Length=3;
@@ -182,6 +190,13 @@ void Cpu::run(){
             Opcode_Length=2;
         }
         break;
+    case uint8_t(0x90):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bcc(value);
+            Opcode_Length=2;
+        }
+        break;
     case uint8_t(0x30):
         {
             int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
@@ -220,11 +235,12 @@ void Cpu::run(){
         Opcode_Length=2;
         break;
     default:
-        std::cout<< "Unimplemented Instruction: "<< std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(opcode).to_ulong() << std::endl;
+        std::string error = std::format("Unimplemented Instruction: %x\n",opcode);
+        (*iohandler).printString(error);
+        //std::cout<< "Unimplemented Instruction: "<< std::setfill ('0') << std::setw(2) << std::hex<<std::bitset<8>(opcode).to_ulong() << std::endl;
         //printRegisters();
         break;
     }
-    sleep(.05);
     cpuRegisters.ProgramCounter++;
 }
 
@@ -236,7 +252,7 @@ uint16_t Cpu::getOperantBytes(){
 }
 
 void Cpu::printRegisters(){
-    std::cout << cpuRegisters.toString();
+    (*iohandler).printString(cpuRegisters.toString());
 }
 
 void Cpu::printMemoryLocation(int memoryLocation){
@@ -280,6 +296,21 @@ void Cpu::and_(char immediate){
     cpuRegisters.Accumulator = immediate & cpuRegisters.Accumulator;
 }
 
+void Cpu::eor_(char immediate){
+    cpuRegisters.Accumulator = immediate ^ cpuRegisters.Accumulator;
+    if (cpuRegisters.Accumulator){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(cpuRegisters.Accumulator>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
+}
+
 void Cpu::lda(char immediate){
     cpuRegisters.Accumulator = immediate;
 }
@@ -303,6 +334,15 @@ void Cpu::sty(uint16_t address){
 
 void Cpu::bne(int8_t relAddress){
     if (cpuRegisters.Accumulator != 0){
+        Opcode_Length++;
+        jmp(relAddress);
+    }else{
+        cpuRegisters.ProgramCounter++;
+    }
+}
+
+void Cpu::bcc(int8_t relAddress){
+    if (cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Carry) != 0){
         Opcode_Length++;
         jmp(relAddress);
     }else{

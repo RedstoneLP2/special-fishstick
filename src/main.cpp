@@ -2,41 +2,50 @@
 
 bool running = false;
 
-void RunCpu(Cpu core){
+void RunCpu(Cpu core, ioChip ACIA){
     while(running)
     //for (int i = 0; i < 5000; i++)
     {
         //core.printRegisters();
         core.run();
+        ACIA.run();
         //std::cout << "-------------------"<<std::endl;
     }
 }
 
-void RunACIA(ioChip core){
-    while(running)
-    //for (int i = 0; i < 5000; i++)
-    {
-        //core.printRegisters();
-        core.run();
-        //std::cout << "-------------------"<<std::endl;
-    }
+void timer(int seconds){
+    sleep(seconds);
+    running=false;
 }
 
 int main(int argc, char const *argv[])
 {
     MemoryManager memory = MemoryManager(65535);
     running = true;
-    Cpu core = Cpu(memory);
-    ioChip ACIA = ioChip(memory);
+    ioHandler io = ioHandler();
+    ioChip ACIA = ioChip(memory,&io);
+    Cpu core = Cpu(memory,&io);
     loadfile("./sample/tmp/eater.bin",memory.getMemory());
     core.reset();
-    std::thread cpu (RunCpu,core);
-    std::thread acia (RunACIA,ACIA);
+    //std::thread cpu (RunCpu,core,ACIA);
 
+    std::thread Timer(timer,10);
+    while(running)
+    //for (int i = 0; i < 5000; i++)
+    {
+        //core.printRegisters();
+        core.run();
+        ACIA.run();
+        //std::cout << "-------------------"<<std::endl;
+    }
+
+    sleep(10);
+    core.printRegisters();
+    io.printString("TEST FROM MAIN");
     sleep(2);
     running = false;
-    cpu.join();
-    acia.join();
+    //cpu.join();
+    Timer.join();
 
     //hello_World(core);
     return 0;

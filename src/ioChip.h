@@ -4,6 +4,7 @@ class ioChip
 {
 private:
     MemoryManager mm;
+    ioHandler* iohandler;
     uint16_t ACIA_DATA_ADDR;
     uint16_t ACIA_STATUS_ADDR;
     uint16_t ACIA_CMD_ADDR;
@@ -11,7 +12,7 @@ private:
 
     void print();
 public:
-    ioChip(MemoryManager);
+    ioChip(MemoryManager,ioHandler*);
     ~ioChip();
     void run();
     void sendkey(uint8_t);

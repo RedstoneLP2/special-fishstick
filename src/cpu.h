@@ -9,14 +9,16 @@ private:
     MemoryManager systemRam;
     uint16_t getOperantBytes();
     uint16_t Opcode_Length;
+    ioHandler* iohandler;
 
 public:
-    Cpu(MemoryManager);
+    Cpu(MemoryManager, ioHandler*);
     ~Cpu();
     void setStatusFlag(unsigned);
     void unSetStatusFlag(unsigned);
     void cmp(uint8_t);
     void and_(char);
+    void eor_(char);
     void lda(char);
     void ldx(char);
     void ldy(char);
@@ -25,6 +27,7 @@ public:
     void sty(uint16_t);
     void jsr(uint16_t);
     void bne(int8_t);
+    void bcc(int8_t);
     void beq(int8_t);
     void bpl(int8_t);
     void bmi(int8_t);

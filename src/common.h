@@ -8,9 +8,13 @@
 #include <string.h>
 #include <iomanip>
 #include <thread>
+#include <ncurses.h>
 
+#include "ioHandler.h"
 #include "registers.h"
 #include "memoryManager.h"
+#include "ioChip.h"
 #include "cpu.h"
 #include "util.h"
-#include "ioChip.h"
+
+#define SPEED .05
