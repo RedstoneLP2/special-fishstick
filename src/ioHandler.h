@@ -7,8 +7,10 @@ private:
     WINDOW* debugWindow;
 public:
     void printHeader();
-    void printString(std::string);
-    void printChar(char);
+    void printIoString(std::string);
+    void printIoChar(char);
+    void printDebugString(std::string);
+    void printDebugChar(char);
     ioHandler();
     ~ioHandler();
     char handleInput();

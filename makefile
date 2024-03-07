@@ -2,7 +2,7 @@ CROSS_COMPILE ?=
 CXX ?= $(CROSS_COMPILE)g++
 CC ?= $(CROSS_COMPILE)gcc
 LDFLAGS +=-Wl,--gc-sections
-CXXFLAGS = -fPIC -std=c++20
+CXXFLAGS = -fPIC -std=c++20 -g -O0
 LIBS = -lncurses
 
 

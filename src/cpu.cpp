@@ -50,6 +50,219 @@ void Cpu::run(){
     std::cout<<"parameter01: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))).to_ulong()<<std::endl;
     std::cout<<"parameter02: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+2))).to_ulong()<<std::endl;
     */
+    //                      0x 1    6
+    //                      0b 0001 0110
+    //
+    //  Adrressing mode     0b 1010 0000
+    //                      0b 0000 0101
+    //                      0b 101
+    //std::bitset<16> opcode (opcode);
+    switch (opcode)
+    {// special cases!
+    case uint8_t(0x20):
+        jsr(getOperantBytes());
+        Opcode_Length+=6;
+        break;
+    case uint8_t(0x60):
+        rts();
+        Opcode_Length+=6;
+        break;
+    case uint8_t(0x48):
+        pha();
+        Opcode_Length+=3;
+        break;
+    case uint8_t(0x68):
+        pla();
+        Opcode_Length+=4;
+        break;
+    case uint8_t(0xD0):
+        bne(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        Opcode_Length+=2;
+        break;
+    case uint8_t(0x3a):
+        dec(&cpuRegisters.Accumulator);
+        break;
+    default:
+        {
+        std::bitset<3> addressingMode ((opcode<<3)>>5);
+        std::bitset<2> instructionGroup ((opcode<<6)>>6);
+        std::bitset<3> instruction ((opcode>>5));
+        uint8_t* address;
+        // Opcode addresss
+        if (instructionGroup==std::bitset<2>(0b01))
+        {
+            switch (addressingMode.to_ulong())
+            {
+            case ulong(0x00):   // (Zeropage,X)
+                // TODO: (Zeropage, X)
+                break;
+            case ulong(0x01):   // Zeropage
+                // TODO: Zeropage
+                break;
+            case ulong(0x02):   // Immediate
+                address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            {
+                uint8_t value = *address;
+            }
+                cpuRegisters.ProgramCounter+=1;
+                Opcode_Length+=2;
+                break;
+            case ulong(0x03):   // Absolute
+                address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+                cpuRegisters.ProgramCounter+=2;
+                Opcode_Length+=4;
+                break;
+            case ulong(0x04):   // (Zeropage), Y
+                // TODO: (Zeropage), Y
+                break;
+            case ulong(0x05):   // Zeropage, X
+                // TODO: Zeropage, X
+                break;
+            case ulong(0x06):   // Absolute, Y
+                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.YIndex));
+                cpuRegisters.ProgramCounter+=2;
+                Opcode_Length+=4;
+                break;
+            case ulong(0x07):   // Absolute, X
+                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.XIndex));
+                cpuRegisters.ProgramCounter+=2;
+                Opcode_Length+=4;
+                break;
+            default:
+                break;
+            }
+        }else if (instructionGroup==std::bitset<2>(0b10) or instructionGroup==std::bitset<2>(0b00))
+        {
+            switch (addressingMode.to_ulong())
+            {
+            case ulong(0x00):   // immediate
+                address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+                break;
+            case ulong(0x01):   // Zeropage
+                // TODO: Zeropage
+                break;
+            case ulong(0x02):   // accumulator
+                address = &cpuRegisters.Accumulator;
+                break;
+            case ulong(0x03):   // Absolute
+                address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+                cpuRegisters.ProgramCounter+=2;
+                Opcode_Length+=4;
+                break;
+            case ulong(0x05):   // Zeropage, X
+                // TODO: Zeropage, X
+                break;
+            case ulong(0x07):   // Absolute, X
+                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.XIndex));
+                cpuRegisters.ProgramCounter+=2;
+                Opcode_Length+=4;
+                break;
+            default:
+                ulong test = addressingMode.to_ulong();
+                break;
+            }
+        }
+
+        // Opcodes
+        if (instructionGroup==std::bitset<2>(0b01))
+        {
+        switch (instruction.to_ulong())
+            {
+            case ulong(0x00):   // ORA
+                ora((uint8_t*) address);
+                break;
+            case ulong(0x01):   // AND
+                and_(*address);
+                break;
+            case ulong(0x02):   // EOR
+                eor_(*address);
+                break;
+            case ulong(0x03):   // ADC
+                adc((uint8_t*)address);
+                break;
+            case ulong(0x04):   // STA
+            {
+                uint16_t test = *((uint16_t*) address);
+                sta(*((uint16_t*) address));
+                break;
+            }
+            case ulong(0x05):   // LDA
+                lda(*address);
+                break;
+            case ulong(0x06):   // CMP
+                cmp((uint8_t*)address);
+                break;
+            case ulong(0x07):   // SBC
+                sbc((uint8_t*)address);
+                break;
+            default:
+                break;
+            }
+        }else if (instructionGroup==std::bitset<2>(0b10))
+        {
+            switch (instruction.to_ulong())
+            {
+            case ulong(0x00):   // ASL
+                asl(address);
+                break;
+            case ulong(0x01):   // ROL
+                rol(address);
+                break;
+            case ulong(0x02):   // LSR
+                lsr(address);
+                break;
+            case ulong(0x03):   // ROR
+                ror(address);
+                break;
+            case ulong(0x04):   // STX
+                stx(*((uint16_t*) address));
+                break;
+            case ulong(0x05):   // LDX
+                ldx(*address);
+                break;
+            case ulong(0x06):   // DEC
+                dec(address);
+                break;
+            case ulong(0x07):   // INC
+                inc(address);
+                break;
+            default:
+                break;
+            }
+        }else if (instructionGroup==std::bitset<2>(0b00))
+        {
+            switch (instruction.to_ulong())
+            {
+            case ulong(0x01):   // BIT
+                bit((uint8_t*)address);
+                break;
+            case ulong(0x02):   // JMP
+                jmp((uint16_t)*address);
+                break;
+            case ulong(0x03):   // JMP (abs)
+                jmp(*(uint16_t*)address);
+                break;
+            case ulong(0x04):   // STY
+                sty(*((uint16_t*) address));
+                break;
+            case ulong(0x05):   // LDY
+                ldy(*address);
+                break;
+            case ulong(0x06):   // CPY
+                cpy((uint8_t*)address);
+                break;
+            case ulong(0x07):   // CPX
+                cpx((uint8_t*)address);
+                break;
+            default:
+                break;
+            }
+        }
+    }
+        break;
+    }
+
+/*
     switch (opcode)
     {
     case uint8_t(0xAD):
@@ -64,23 +277,16 @@ void Cpu::run(){
         break;
     case uint8_t(0xA9):
         {
-            char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            //char value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
             lda(value);
             cpuRegisters.ProgramCounter++;
             Opcode_Length=2;
         }
         break;
     case uint8_t(0xAE):
-        ldx(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
+        ldx(value);
         Opcode_Length=4;
         break;
-    /*
-    case uint8_t(0xAC):
-        std::cout<< "0xAC!"<<std::endl;
-        ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
-        Opcode_Length=4;
-        break;
-    */
     case uint8_t(0xA0):
         ldy(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
         Opcode_Length=2;
@@ -231,7 +437,7 @@ void Cpu::run(){
         Opcode_Length=2;
         break;
     case uint8_t(0x0A):
-        asl();
+        asl((uint8_t*)value);
         Opcode_Length=2;
         break;
     default:
@@ -241,6 +447,7 @@ void Cpu::run(){
         //printRegisters();
         break;
     }
+*/
     cpuRegisters.ProgramCounter++;
 }
 
@@ -252,7 +459,7 @@ uint16_t Cpu::getOperantBytes(){
 }
 
 void Cpu::printRegisters(){
-    (*iohandler).printString(cpuRegisters.toString());
+    (*iohandler).printDebugString(cpuRegisters.toString());
 }
 
 void Cpu::printMemoryLocation(int memoryLocation){
@@ -280,23 +487,59 @@ void Cpu::unSetStatusFlag(unsigned Flag){
     }
 }
 
-void Cpu::cmp(uint8_t value){
-    if (cpuRegisters.Accumulator == value){
+void Cpu::ora(uint8_t* value){
+
+}
+
+void Cpu::adc(uint8_t* value){
+
+}
+
+void Cpu::sbc(uint8_t* value){
+    
+}
+
+void Cpu::rol(uint8_t* value){
+    
+}
+
+void Cpu::lsr(uint8_t* value){
+    
+}
+
+void Cpu::ror(uint8_t* value){
+    
+}
+
+void Cpu::bit(uint8_t* value){
+    
+}
+
+void Cpu::cpy(uint8_t* value){
+    
+}
+
+void Cpu::cpx(uint8_t* value){
+    
+}
+
+void Cpu::cmp(uint8_t* value){
+    if (cpuRegisters.Accumulator == *value){
         setStatusFlag(ProcessorStatusFlags.Zero);
     }
-    if (cpuRegisters.Accumulator < value){
+    if (cpuRegisters.Accumulator < *value){
         setStatusFlag(ProcessorStatusFlags.Negative);
     }
-    if (cpuRegisters.Accumulator >= value){
+    if (cpuRegisters.Accumulator >= *value){
         setStatusFlag(ProcessorStatusFlags.Carry);
     }
 }
 
-void Cpu::and_(char immediate){
+void Cpu::and_(uint8_t immediate){
     cpuRegisters.Accumulator = immediate & cpuRegisters.Accumulator;
 }
 
-void Cpu::eor_(char immediate){
+void Cpu::eor_(uint8_t immediate){
     cpuRegisters.Accumulator = immediate ^ cpuRegisters.Accumulator;
     if (cpuRegisters.Accumulator){
         unSetStatusFlag(ProcessorStatusFlags.Zero);
@@ -311,13 +554,13 @@ void Cpu::eor_(char immediate){
     }
 }
 
-void Cpu::lda(char immediate){
+void Cpu::lda(uint8_t immediate){
     cpuRegisters.Accumulator = immediate;
 }
-void Cpu::ldx(char immediate){
+void Cpu::ldx(uint8_t immediate){
     cpuRegisters.XIndex = immediate;
 }
-void Cpu::ldy(char immediate){
+void Cpu::ldy(uint8_t immediate){
     cpuRegisters.YIndex = immediate;
 }
 
@@ -384,8 +627,8 @@ void Cpu::jmp(uint16_t address){
     cpuRegisters.ProgramCounter = address-1;
 }
 
-void Cpu::dec(){
-    cpuRegisters.Accumulator--;
+void Cpu::dec(uint8_t* PValue){
+    (*PValue)--;
 }
 
 void Cpu::dey(){
@@ -406,8 +649,8 @@ void Cpu::iny(){
     cpuRegisters.YIndex++;
 }
 
-void Cpu::inc(){
-    cpuRegisters.Accumulator++;
+void Cpu::inc(uint8_t* pValue){
+    pValue++;
 }
 
 
@@ -429,7 +672,7 @@ void Cpu::jsr(uint16_t address){
     std::cout<< "jumping from: " <<std::hex<< cpuRegisters.ProgramCounter<<std::endl;
     std::cout<< "jumping to: " <<std::hex<< address<<std::endl;
     */
-    jmp(uint16_t(address));
+    jmp(address);
 }
 
 void Cpu::rts(){
@@ -491,10 +734,10 @@ void Cpu::tax(){
     cpuRegisters.XIndex = cpuRegisters.Accumulator;
 }
 
-void Cpu::asl(){
+void Cpu::asl(uint8_t* pValue){
     cpuRegisters.StackPointer++;
 
-    uint8_t carry = ((cpuRegisters.Accumulator>>7)&1);
+    uint8_t carry = ((*pValue>>7)&1);
 
     if (carry){
         setStatusFlag(ProcessorStatusFlags.Carry);
@@ -502,7 +745,7 @@ void Cpu::asl(){
         unSetStatusFlag(ProcessorStatusFlags.Carry);
     }
 
-    uint8_t shifted = (uint8_t) (cpuRegisters.Accumulator  << 1);
+    uint8_t shifted = (uint8_t) (*pValue  << 1);
     if (shifted){
         unSetStatusFlag(ProcessorStatusFlags.Zero);
     }else{
@@ -514,6 +757,6 @@ void Cpu::asl(){
     }else{
         unSetStatusFlag(ProcessorStatusFlags.Negative);
     }
-    cpuRegisters.Accumulator = shifted;
+    *pValue = shifted;
 
 }

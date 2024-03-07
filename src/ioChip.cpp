@@ -4,7 +4,7 @@ ioChip::ioChip(MemoryManager mem,ioHandler* io)
 {
     mm = mem;
     iohandler = io;
-    (*iohandler).printHeader();
+    //(*iohandler).printHeader();
     ACIA_DATA_ADDR      = 0x5000;
     ACIA_STATUS_ADDR    = 0x5001;
     ACIA_CMD_ADDR       = 0x5002;
@@ -18,6 +18,7 @@ ioChip::~ioChip()
 
 void ioChip::run(){
     char ch;
+    uint8_t test = *mm.GetMemoryLocation(ACIA_DATA_ADDR);
     if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != uint8_t(0x00)){
         print();
     }
@@ -33,7 +34,6 @@ void ioChip::sendkey(uint8_t keycode){
 }
 
 void ioChip::print(){
-    (*iohandler).printChar(*mm.GetMemoryLocation(ACIA_DATA_ADDR));
+    (*iohandler).printIoChar(*mm.GetMemoryLocation(ACIA_DATA_ADDR));
     mm.writeMem(ACIA_DATA_ADDR, uint8_t(0x00));
-    refresh();
 }

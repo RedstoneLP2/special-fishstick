@@ -25,11 +25,11 @@ int main(int argc, char const *argv[])
     ioHandler io = ioHandler();
     ioChip ACIA = ioChip(memory,&io);
     Cpu core = Cpu(memory,&io);
-    loadfile("./sample/tmp/eater.bin",memory.getMemory());
+    loadfile("../sample/tmp/eater.bin",memory.getMemory());
     core.reset();
     //std::thread cpu (RunCpu,core,ACIA);
 
-    std::thread Timer(timer,10);
+    //std::thread Timer(timer,10);
     while(running)
     //for (int i = 0; i < 5000; i++)
     {
@@ -41,11 +41,11 @@ int main(int argc, char const *argv[])
 
     sleep(10);
     core.printRegisters();
-    io.printString("TEST FROM MAIN");
-    sleep(2);
+    io.printDebugString("TEST FROM MAIN");
+    sleep(10);
     running = false;
     //cpu.join();
-    Timer.join();
+    //Timer.join();
 
     //hello_World(core);
     return 0;

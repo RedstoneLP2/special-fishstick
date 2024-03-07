@@ -7,6 +7,7 @@ ioHandler::ioHandler()
     cbreak();
     keypad(stdscr, TRUE);
     nodelay(stdscr, TRUE);
+    refresh();
 
     int height = LINES;
 	int width = (COLS/2)-1;
@@ -15,7 +16,7 @@ ioHandler::ioHandler()
 	debugWindow = newwin(height, width, starty, startx);
     ioWindow = newwin(height, width, starty, 0);
     scrollok(ioWindow,TRUE);
-    //printHeader();
+    printHeader();
     refresh();
 }
 
@@ -42,14 +43,28 @@ void ioHandler::printHeader(){
 
     wrefresh(ioWindow);
     wrefresh(debugWindow);
+    //refresh();
+}
+
+void ioHandler::printIoChar(char ch){
+    wprintw(ioWindow,"%c",ch);
+    wrefresh(ioWindow);
+    refresh();
+}
+void ioHandler::printIoString(std::string string){
+    wprintw(ioWindow,"DEBUG: %s\n",string.c_str());
+    wrefresh(ioWindow);
     refresh();
 }
 
-void ioHandler::printChar(char ch){
-    wprintw(ioWindow,"%c",ch);
-    wrefresh(ioWindow);
+void ioHandler::printDebugChar(char ch){
+    wprintw(debugWindow,"%c",ch);
+    wrefresh(debugWindow);
+    refresh();
 }
-void ioHandler::printString(std::string string){
+
+void ioHandler::printDebugString(std::string string){
     wprintw(debugWindow,"DEBUG: %s\n",string.c_str());
+    wrefresh(debugWindow);
     refresh();
 }
