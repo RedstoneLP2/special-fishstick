@@ -44,7 +44,14 @@ void Cpu::run(){
         Opcode_Length--;
         return;
     }
+    std::string dbg;
+    
+    (*iohandler).printDebugString(cpuRegisters.toString());
+    
     uint8_t opcode = *((uint8_t*)systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter));
+    
+    dbg = std::format("Opcode ({:x})",opcode);
+    (*iohandler).printDebugString(dbg);
     /*
     std::cout<<"opcode: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(opcode).to_ulong()<<std::endl;
     std::cout<<"parameter01: "<<std::setfill('0')<<std::setw(2)<<std::hex<<std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))).to_ulong()<<std::endl;
@@ -57,10 +64,11 @@ void Cpu::run(){
     //                      0b 0000 0101
     //                      0b 101
     //std::bitset<16> opcode (opcode);
+
     switch (opcode)
     {// special cases!
     case uint8_t(0x20):
-        jsr(getOperantBytes());
+        jsr(getOperantBytes(cpuRegisters.ProgramCounter+1));
         Opcode_Length+=6;
         break;
     case uint8_t(0x60):
@@ -82,6 +90,50 @@ void Cpu::run(){
     case uint8_t(0x3a):
         dec(&cpuRegisters.Accumulator);
         break;
+    case uint8_t(0xd8):
+        cld();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0x58):
+        cli();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0xf0):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            beq(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x10):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bpl(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x90):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bcc(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x30):
+        {
+            int8_t value = *(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+            bmi(value);
+            Opcode_Length=2;
+        }
+        break;
+    case uint8_t(0x88):
+        dey();
+        Opcode_Length=2;
+        break;
+    case uint8_t(0xc8):
+        iny();
+        Opcode_Length=2;
+        break;
     default:
         {
         std::bitset<3> addressingMode ((opcode<<3)>>5);
@@ -95,36 +147,37 @@ void Cpu::run(){
             {
             case ulong(0x00):   // (Zeropage,X)
                 // TODO: (Zeropage, X)
+                address = systemRam.GetMemoryLocation(getOperantBytes(0x0000+cpuRegisters.XIndex));
                 break;
             case ulong(0x01):   // Zeropage
                 // TODO: Zeropage
+                address = systemRam.GetMemoryLocation(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
                 break;
             case ulong(0x02):   // Immediate
                 address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
-            {
-                uint8_t value = *address;
-            }
                 cpuRegisters.ProgramCounter+=1;
                 Opcode_Length+=2;
                 break;
             case ulong(0x03):   // Absolute
-                address = (systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1));
+                address = systemRam.GetMemoryLocation(getOperantBytes(cpuRegisters.ProgramCounter+1));
                 cpuRegisters.ProgramCounter+=2;
                 Opcode_Length+=4;
                 break;
             case ulong(0x04):   // (Zeropage), Y
                 // TODO: (Zeropage), Y
+                address = systemRam.GetMemoryLocation(getOperantBytes(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)))+cpuRegisters.YIndex);
                 break;
             case ulong(0x05):   // Zeropage, X
                 // TODO: Zeropage, X
+                address = systemRam.GetMemoryLocation(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))+cpuRegisters.XIndex);
                 break;
             case ulong(0x06):   // Absolute, Y
-                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.YIndex));
+                address = (systemRam.GetMemoryLocation(getOperantBytes(cpuRegisters.ProgramCounter+1)+cpuRegisters.YIndex));
                 cpuRegisters.ProgramCounter+=2;
                 Opcode_Length+=4;
                 break;
             case ulong(0x07):   // Absolute, X
-                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.XIndex));
+                address = (systemRam.GetMemoryLocation(getOperantBytes(cpuRegisters.ProgramCounter+1)+cpuRegisters.XIndex));
                 cpuRegisters.ProgramCounter+=2;
                 Opcode_Length+=4;
                 break;
@@ -140,6 +193,7 @@ void Cpu::run(){
                 break;
             case ulong(0x01):   // Zeropage
                 // TODO: Zeropage
+                address = systemRam.GetMemoryLocation(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1)));
                 break;
             case ulong(0x02):   // accumulator
                 address = &cpuRegisters.Accumulator;
@@ -151,9 +205,10 @@ void Cpu::run(){
                 break;
             case ulong(0x05):   // Zeropage, X
                 // TODO: Zeropage, X
+                address = systemRam.GetMemoryLocation(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))+cpuRegisters.XIndex);
                 break;
             case ulong(0x07):   // Absolute, X
-                address = (systemRam.GetMemoryLocation(getOperantBytes()+cpuRegisters.XIndex));
+                address = (systemRam.GetMemoryLocation(getOperantBytes(cpuRegisters.ProgramCounter+1)+cpuRegisters.XIndex));
                 cpuRegisters.ProgramCounter+=2;
                 Opcode_Length+=4;
                 break;
@@ -187,10 +242,15 @@ void Cpu::run(){
                 break;
             }
             case ulong(0x05):   // LDA
+            {
+                uint8_t* a = address;
                 lda(*address);
+            }
                 break;
             case ulong(0x06):   // CMP
+            {
                 cmp((uint8_t*)address);
+            }
                 break;
             case ulong(0x07):   // SBC
                 sbc((uint8_t*)address);
@@ -237,7 +297,7 @@ void Cpu::run(){
                 bit((uint8_t*)address);
                 break;
             case ulong(0x02):   // JMP
-                jmp((uint16_t)*address);
+                jmp(*(uint16_t*)address);
                 break;
             case ulong(0x03):   // JMP (abs)
                 jmp(*(uint16_t*)address);
@@ -258,7 +318,11 @@ void Cpu::run(){
                 break;
             }
         }
-    }
+        break;
+        }
+        std::string error = std::format("Unimplemented Instruction: {:x}\n",opcode);
+        (*iohandler).printDebugString(error);
+        sleep(100);
         break;
     }
 
@@ -451,9 +515,9 @@ void Cpu::run(){
     cpuRegisters.ProgramCounter++;
 }
 
-uint16_t Cpu::getOperantBytes(){
-        std::string upper = std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+1))).to_string();
-        std::string lower = std::bitset<8>(*(systemRam.GetMemoryLocation(cpuRegisters.ProgramCounter+2))).to_string();
+uint16_t Cpu::getOperantBytes(uint16_t address){
+        std::string upper = std::bitset<8>(*(systemRam.GetMemoryLocation(address))).to_string();
+        std::string lower = std::bitset<8>(*(systemRam.GetMemoryLocation(address+1))).to_string();
         std::bitset<16>value(lower+upper);
         return (uint16_t)value.to_ulong();
 }
@@ -474,6 +538,21 @@ void Cpu::printMemoryLocation(int memoryLocation){
     std::cout<<std::endl;
 }
 
+void Cpu::resetStatusRegisters(){
+    for (size_t i = 0; i < 8; i++)
+    {
+        if (i == ProcessorStatusFlags.Unused){
+            if (!cpuRegisters.ProcessorStatus.test(i))
+            {
+                cpuRegisters.ProcessorStatus[i].flip();
+            }
+        }else if (cpuRegisters.ProcessorStatus.test(i))
+        {
+            cpuRegisters.ProcessorStatus[i].flip();
+        }
+    }
+}
+
 void Cpu::setStatusFlag(unsigned Flag){
     if (!cpuRegisters.ProcessorStatus.test(Flag))
     {
@@ -487,60 +566,248 @@ void Cpu::unSetStatusFlag(unsigned Flag){
     }
 }
 
-void Cpu::ora(uint8_t* value){
+void Cpu::ora(uint8_t* immediate){
+    cpuRegisters.Accumulator = *immediate | cpuRegisters.Accumulator;
+    resetStatusRegisters();
+    if (cpuRegisters.Accumulator){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
 
+    if(cpuRegisters.Accumulator>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
-void Cpu::adc(uint8_t* value){
+void Cpu::adc(uint8_t* immediate){
+    uint16_t test = *immediate + cpuRegisters.Accumulator;
+    cpuRegisters.Accumulator = test;
+    resetStatusRegisters();
+    if (test != (uint8_t) test){
+        setStatusFlag(ProcessorStatusFlags.Overflow);
+    }
+    if (cpuRegisters.Accumulator){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
 
+    if(cpuRegisters.Accumulator>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
-void Cpu::sbc(uint8_t* value){
-    
+void Cpu::sbc(uint8_t* immediate){
+    std::string error = std::format("Running SBC on {:x}",*immediate);
+    (*iohandler).printDebugString(error);
+
+    uint16_t test = cpuRegisters.Accumulator - *immediate ;
+    cpuRegisters.Accumulator = test;
+    resetStatusRegisters();
+    if (test != (uint8_t) test){
+        setStatusFlag(ProcessorStatusFlags.Overflow);
+    }
+    if (cpuRegisters.Accumulator){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(cpuRegisters.Accumulator>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::rol(uint8_t* value){
-    
+    std::string error = std::format("Running ROL on {:x}",*value);
+    (*iohandler).printDebugString(error);
+    uint16_t test = *value<<1;
+    *value = test+cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Carry);
+    resetStatusRegisters();
+    if (test>>8){
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
+
+    if (*value){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(*value>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::lsr(uint8_t* value){
-    
+        std::string error = std::format("Running LSR on {:x}",*value);
+    (*iohandler).printDebugString(error);
+    uint8_t test = *value<<7>>7;
+    *value = (*value>>1);
+    resetStatusRegisters();
+    if (test){
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
+
+    if (*value){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(*value>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::ror(uint8_t* value){
-    
+
+    std::string error = std::format("Running ROR on {:x}",*value);
+    (*iohandler).printDebugString(error);
+
+    uint8_t test = *value<<7>>7;
+    *value = (*value>>1)+(cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Carry)<<7);
+    resetStatusRegisters();
+    if (test){
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
+
+    if (*value){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(*value>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::bit(uint8_t* value){
+    std::string error = std::format("Running BIT on ({:x}) and {:x}",cpuRegisters.Accumulator,*value);
+    (*iohandler).printDebugString(error);
+
+    uint16_t test = *value & cpuRegisters.Accumulator;
+    resetStatusRegisters();
+    if (*value<<1>>7){
+        setStatusFlag(ProcessorStatusFlags.Overflow);
+    }
     
+    if (test){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(*value>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
+
 void Cpu::cpy(uint8_t* value){
+        
+    std::string error = std::format("Comparing YIndex ({:x}) to: {:x}",cpuRegisters.YIndex,*value);
+    (*iohandler).printDebugString(error);
     
+    unSetStatusFlag(ProcessorStatusFlags.Zero);
+    unSetStatusFlag(ProcessorStatusFlags.Negative);
+    unSetStatusFlag(ProcessorStatusFlags.Carry);
+
+    if (cpuRegisters.YIndex == *value){
+        (*iohandler).printDebugString("Setting Zero Flag");
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if (cpuRegisters.YIndex < *value){
+        (*iohandler).printDebugString("Setting Negative Flag");
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }
+    if (cpuRegisters.YIndex >= *value){
+        (*iohandler).printDebugString("Setting Carry Flag");
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
 }
 
 void Cpu::cpx(uint8_t* value){
+    std::string error = std::format("Comparing XIndex ({:x}) to: {:x}",cpuRegisters.XIndex,*value);
+    (*iohandler).printDebugString(error);
     
+    unSetStatusFlag(ProcessorStatusFlags.Zero);
+    unSetStatusFlag(ProcessorStatusFlags.Negative);
+    unSetStatusFlag(ProcessorStatusFlags.Carry);
+
+    if (cpuRegisters.XIndex == *value){
+        (*iohandler).printDebugString("Setting Zero Flag");
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if (cpuRegisters.XIndex < *value){
+        (*iohandler).printDebugString("Setting Negative Flag");
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }
+    if (cpuRegisters.XIndex >= *value){
+        (*iohandler).printDebugString("Setting Carry Flag");
+        setStatusFlag(ProcessorStatusFlags.Carry);
+    }
 }
 
 void Cpu::cmp(uint8_t* value){
+
+    
+    std::string error = std::format("Comparing accumulator ({:x}) to: {:x}",cpuRegisters.Accumulator,*value);
+    (*iohandler).printDebugString(error);
+    
+    unSetStatusFlag(ProcessorStatusFlags.Zero);
+    unSetStatusFlag(ProcessorStatusFlags.Negative);
+    unSetStatusFlag(ProcessorStatusFlags.Carry);
+
     if (cpuRegisters.Accumulator == *value){
+        (*iohandler).printDebugString("Setting Zero Flag");
         setStatusFlag(ProcessorStatusFlags.Zero);
     }
     if (cpuRegisters.Accumulator < *value){
+        (*iohandler).printDebugString("Setting Negative Flag");
         setStatusFlag(ProcessorStatusFlags.Negative);
     }
     if (cpuRegisters.Accumulator >= *value){
+        (*iohandler).printDebugString("Setting Carry Flag");
         setStatusFlag(ProcessorStatusFlags.Carry);
     }
 }
 
 void Cpu::and_(uint8_t immediate){
     cpuRegisters.Accumulator = immediate & cpuRegisters.Accumulator;
+    resetStatusRegisters();
+    if (cpuRegisters.Accumulator){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(cpuRegisters.Accumulator>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::eor_(uint8_t immediate){
     cpuRegisters.Accumulator = immediate ^ cpuRegisters.Accumulator;
+    resetStatusRegisters();
     if (cpuRegisters.Accumulator){
         unSetStatusFlag(ProcessorStatusFlags.Zero);
     }else{
@@ -556,12 +823,48 @@ void Cpu::eor_(uint8_t immediate){
 
 void Cpu::lda(uint8_t immediate){
     cpuRegisters.Accumulator = immediate;
+    resetStatusRegisters();
+    if (immediate){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(immediate>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 void Cpu::ldx(uint8_t immediate){
     cpuRegisters.XIndex = immediate;
+    resetStatusRegisters();
+    if (immediate){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(immediate>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 void Cpu::ldy(uint8_t immediate){
     cpuRegisters.YIndex = immediate;
+    resetStatusRegisters();
+    if (immediate){
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+
+    if(immediate>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::sta(uint16_t address){
@@ -569,14 +872,14 @@ void Cpu::sta(uint16_t address){
 }
 
 void Cpu::stx(uint16_t address){
-    systemRam.writeMem(address, cpuRegisters.XIndex);
+    systemRam.writeMem(address, uint8_t(cpuRegisters.XIndex));
 }
 void Cpu::sty(uint16_t address){
-    systemRam.writeMem(address, cpuRegisters.YIndex);
+    systemRam.writeMem(address, uint8_t(cpuRegisters.YIndex));
 }
 
 void Cpu::bne(int8_t relAddress){
-    if (cpuRegisters.Accumulator != 0){
+    if (!cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Zero)){
         Opcode_Length++;
         jmp(relAddress);
     }else{
@@ -585,7 +888,7 @@ void Cpu::bne(int8_t relAddress){
 }
 
 void Cpu::bcc(int8_t relAddress){
-    if (cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Carry) != 0){
+    if (cpuRegisters.ProcessorStatus.test(ProcessorStatusFlags.Carry) == 0){
         Opcode_Length++;
         jmp(relAddress);
     }else{
@@ -628,11 +931,26 @@ void Cpu::jmp(uint16_t address){
 }
 
 void Cpu::dec(uint8_t* PValue){
+    resetStatusRegisters();
+    if (*PValue-1 == uint8_t(0xFF)){
+        setStatusFlag(ProcessorStatusFlags.Overflow);
+    }
     (*PValue)--;
+    if (!*PValue){
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if (*PValue>>7){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    }else{
+        unSetStatusFlag(ProcessorStatusFlags.Negative);
+    }
 }
 
 void Cpu::dey(){
     cpuRegisters.YIndex--;
+    resetStatusRegisters();
     if (!cpuRegisters.YIndex){
         setStatusFlag(ProcessorStatusFlags.Zero);
     }else{
@@ -646,7 +964,15 @@ void Cpu::dey(){
 }
 
 void Cpu::iny(){
+    (*iohandler).printDebugString("Incrementing YIndex");
     cpuRegisters.YIndex++;
+    resetStatusRegisters();
+    if (cpuRegisters.YIndex == 0x00){
+        setStatusFlag(ProcessorStatusFlags.Zero);
+    }
+    if ((cpuRegisters.YIndex >> 7)==0x01){
+        setStatusFlag(ProcessorStatusFlags.Negative);
+    };
 }
 
 void Cpu::inc(uint8_t* pValue){
