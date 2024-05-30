@@ -61,13 +61,14 @@ void ioHandler::printHeader(){
 }
 
 void ioHandler::printIoChar(char ch){
+    int y,x;
+    getyx(ioWindow,y,x);
+    if (y==0){
+        y++;
+    }
     if (ch == 0x0A){
-        int y,x;
-        getyx(ioWindow,y,x);
         wmove(ioWindow,y+1,x);
     }else if (ch == 0x0D){
-        int y,x;
-        getyx(ioWindow,y,x);
         wmove(ioWindow,y,1);
     }else{
         wprintw(ioWindow,"%c",ch);

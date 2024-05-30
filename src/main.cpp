@@ -20,14 +20,15 @@ void timer(int seconds){
 
 int main(int argc, char const *argv[])
 {
-    MemoryManager memory = MemoryManager(65535);
-    running = true;
     ioHandler io = ioHandler();
-    ioChip ACIA = ioChip(memory,&io);
-    Cpu core = Cpu(memory,&io);
-    loadfile("../sample/tmp/eater.bin",memory.getMemory());
+    MemoryManager memory = MemoryManager(65535,&io);
+    running = true;
+    ioChip ACIA = ioChip(&memory,&io);
+    Cpu core = Cpu(&memory,&io);
+    loadfile("./sample/tmp/eater.bin",memory.getMemory());
     core.reset();
     //std::thread cpu (RunCpu,core,ACIA);
+    //hello_World(core);
 
     //std::thread Timer(timer,10);
     while(running)

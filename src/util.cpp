@@ -27,7 +27,7 @@ void hello_World(Cpu core){
     core.lda('\n');
     core.sta(ushort(0x5000));
     //std::cout << "------------"<<std::endl;
-    core.printMemoryLocation(0x5000);
+    //core.printMemoryLocation(0x5000);
 }
 
 void loadfile(char* filename,void* memory){

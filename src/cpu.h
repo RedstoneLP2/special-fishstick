@@ -6,13 +6,13 @@ class Cpu
 private:
 
     Registers cpuRegisters;
-    MemoryManager systemRam;
+    MemoryManager* systemRam;
     uint16_t getOperantBytes(uint16_t);
     uint16_t Opcode_Length;
     ioHandler* iohandler;
 
 public:
-    Cpu(MemoryManager, ioHandler*);
+    Cpu(MemoryManager*, ioHandler*);
     ~Cpu();
     void resetStatusRegisters();
     void setStatusFlag(unsigned);

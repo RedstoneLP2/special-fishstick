@@ -30,3 +30,4 @@ HELLOWORLD:
         jsr CHROUT
 
         JMP RESET
+        ;JMP HELLOWORLD

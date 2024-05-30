@@ -1,15 +1,10 @@
 #include "common.h"
 
-ioChip::ioChip(MemoryManager mem,ioHandler* io)
+ioChip::ioChip(MemoryManager* mem,ioHandler* io)
 {
     mm = mem;
     iohandler = io;
     //(*iohandler).printHeader();
-    ACIA_DATA_ADDR      = 0x5000;
-    ACIA_STATUS_ADDR    = 0x5001;
-    ACIA_CMD_ADDR       = 0x5002;
-    ACIA_CTRL_ADDR      = 0x5003;
-
 }
 
 ioChip::~ioChip()
@@ -18,22 +13,28 @@ ioChip::~ioChip()
 
 void ioChip::run(){
     char ch;
-    uint8_t test = *mm.GetMemoryLocation(ACIA_DATA_ADDR);
-    if (*mm.GetMemoryLocation(ACIA_DATA_ADDR) != uint8_t(0x00)){
+    if (mm->readDevMem(ACIA_DATA_ADDR) != uint8_t(0x00)){
         print();
     }
-    if ((ch = (*iohandler).handleInput())!=ERR){
+    if ((ch = iohandler->handleInput())!=ERR){
+        std::string cha = std::format("INPUT: {:x}",ch);
+        iohandler->printDebugString(cha);
+        if (ch == char(0x0a)){
+            ch = char(0x0d);
+        }else if (ch == char(0x07)){
+            ch = char(0x08);
+        }
         sendkey(ch);
     }
-    sleep(SPEED);
 }
 
 void ioChip::sendkey(uint8_t keycode){
-    mm.writeMem(ACIA_STATUS_ADDR,uint8_t(0x08));
-    mm.writeMem(ACIA_DATA_ADDR,keycode);
+    mm->writeDevMem(ACIA_STATUS_ADDR,uint8_t(0x08));
+    mm->writeDevMem(ACIA_DATA_ADDR,keycode);
 }
 
 void ioChip::print(){
-    (*iohandler).printIoChar(*mm.GetMemoryLocation(ACIA_DATA_ADDR));
-    mm.writeMem(ACIA_DATA_ADDR, uint8_t(0x00));
+    char ch = mm->readDevMem(ACIA_DATA_ADDR);
+    iohandler->printIoChar(mm->readDevMem(ACIA_DATA_ADDR));
+    mm->writeMem(ACIA_DATA_ADDR, uint8_t(0x00));
 }
